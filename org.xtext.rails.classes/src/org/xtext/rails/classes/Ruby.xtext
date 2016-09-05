@@ -1,0 +1,69 @@
+grammar org.xtext.rails.classes.Ruby with org.eclipse.xtext.common.Terminals
+
+generate ruby "http://www.xtext.org/rails/classes/Ruby"
+
+Class returns RubyClass:
+	RUBY_SL_COMMENT*
+	'class' name=RUBY_CLASS_NAME ('<' superType=RUBY_CLASS_NAME)?
+		classElements+=ClassElement
+	'end' 
+;
+
+ClassElement:
+	Method |Relationship | OTHER
+;
+
+Relationship:
+	HasMany | HasAndBelongsToMany | BelongsTo
+;
+
+HasMany returns HasMany:
+	'has_many' WS name=STRING_OR_SYMBOL
+;
+
+HasAndBelongsToMany returns HasAndBelongsToMany:
+	'has_and_belongs_to_many' WS name=STRING_OR_SYMBOL
+;
+
+BelongsTo returns BelongsTo:
+	'belongs_to' WS name=STRING_OR_SYMBOL ('->{'OTHER'}')? (','WS* ('foreign_key:'|':foreign_key'' '*'=>')' '*foreign_key=STRING_OR_SYMBOL NBWS  )? & 
+	(','WS* ('class_name:'|':class_name'' '*'=>')' '*class_name=STRING NBWS  )? &
+	(','WS* ('select:'|':select'' '*'=>')' '*STRING NBWS  )? &
+	(','WS* ('conditions:'|':conditions'' '*'=>')' '*HASH NBWS  )?
+;
+
+ForeignKey:
+	(','WS* ('foreign_key:'|':foreign_key'' '*'=>')' '*foreign_key=STRING_OR_SYMBOL NBWS  )
+;
+ClassName:
+	(','WS* ('class_name:'|':class_name'' '*'=>')' '*class_name=STRING NBWS  )
+;
+Dependent:
+	(','WS* ('dependent:'|':dependent'' '*'=>')' '*class_name=STRING_OR_SYMBOL NBWS  )
+;
+Through:
+	(','WS* ('through:'|':through'' '*'=>')' '*class_name=STRING_OR_SYMBOL NBWS  )
+;
+
+Method:
+	RUBY_SL_COMMENT*
+	'def' name=RUBY_METHOD_NAME' '+('('parameters+=METHOD_PARAMS')')?
+		OTHER*
+	'end'
+;
+terminal OTHER: ANY_OTHER*;
+terminal METHOD_CALL: ID' '* '('METHOD_CALL_PARAMS')'  RUBY_SL_COMMENT?;
+terminal METHOD_CALL_PARAMS: (METHOD_CALL_PARAM',')+METHOD_CALL_PARAM ;
+terminal METHOD_CALL_PARAM: ' '*(METHOD_CALL);
+terminal VALUE: STRING|HASH|SYMBOL;
+terminal SYMBOL: ':'ID;
+terminal HASH: '{' WS* HASH_VALUES WS* '}';
+terminal HASH_VALUES: ((HASH_PAIR ' '* ',' WS*)* HASH_PAIR )?;
+terminal HASH_PAIR:  (ID':'' '*VALUE)|(VALUE ' '*'=>'' '*VALUE);
+terminal STRING_OR_SYMBOL: STRING|':'ID;
+terminal METHOD_PARAMS : 	(METHOD_PARAM' '*','WS*)*METHOD_PARAM;
+terminal METHOD_PARAM : 	ID(' '*'='' '*ID)*;
+terminal RUBY_SL_COMMENT 	: '#' !('\n'|'\r')* ('\r'? '\n')?;
+terminal RUBY_METHOD_NAME 	: ID'='?;
+terminal RUBY_CLASS_NAME 	: (ID'::')*ID;
+terminal NBWS:(' '|'\t')+;
